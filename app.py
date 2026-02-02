@@ -39,22 +39,22 @@ if 'reset_key' not in st.session_state:
     st.session_state.reset_key = 0
 
 def reset_all():
-    st.session_state.reset_key += 1 # Changing the key forces all widgets to re-render from 0
+    st.session_state.reset_key += 1
 
-# --- HEADER SECTION ---
+# --- TOP HEADER ---
 st.title("NIH Stroke Scale")
 
-# Placeholder for the Score (so it appears at the top but calculates after selections)
+# 1. Total Score Metric (Calculated below but displayed here)
 score_box = st.empty()
 
-# Reset button at the top
+# 2. Reset Button
 st.button("🔄 Reset Calculator", on_click=reset_all, use_container_width=True)
 st.divider()
 
 # --- INPUTS ---
 current_scores = {}
 
-# 1. Trigger Item: LOC 1a
+# 1. Level of Consciousness 1a (The Trigger)
 loc_choice = st.radio(
     NIHSS_ITEMS[0]["name"], 
     NIHSS_ITEMS[0]["options"], 
@@ -65,16 +65,15 @@ loc_score = int(loc_choice[0])
 current_scores["1a"] = loc_score
 is_coma = (loc_score == 3)
 
-# --- CLINICAL PRESUMPTION (Now at the top) ---
+# --- CLINICAL PRESUMPTION (Top Position) ---
 if is_coma:
     st.error("🚨 **CLINICAL PRESUMPTION: SEVERE STROKE**")
-    st.markdown("""
-    **Note:** Patient is in a coma (LOC 1a=3). In the absence of intracranial hemorrhage, a large territory ischemic stroke 
-    (e.g., Basilar Artery or Large Territory MCA) must be presumed. Official NIHSS guidelines automatically apply 
-    maximum deficit scores to untestable items.
+    st.info("""
+    **Patient in Coma (LOC 1a=3).** Rule out hemorrhage. Large territory ischemic stroke (Basilar or MCA) must be presumed. 
+    Maximum deficit scores automatically applied to untestable items.
     """)
 
-# 2. Loop through remaining items
+# 2. Remaining Items
 for item in NIHSS_ITEMS[1:]:
     item_id = item["id"]
     
@@ -90,9 +89,8 @@ for item in NIHSS_ITEMS[1:]:
 total_score = sum(current_scores.values())
 interpretation, delta_color = get_interpretation(total_score)
 
-# Fill the placeholder at the top
+# Update the metric at the top
 with score_box:
-    st.metric(label="Patient NIHSS Score", value=f"{total_score} / 42", delta=interpretation, delta_color=delta_color)
+    st.metric(label="NIHSS Total Score", value=f"{total_score} / 42", delta=interpretation, delta_color=delta_color)
 
 st.divider()
-st.caption("Standardized assessment for acute stroke. For clinical use by trained healthcare providers.")
