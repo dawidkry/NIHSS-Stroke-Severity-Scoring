@@ -7,3 +7,6 @@ A professional-grade, web-based tool for calculating the **National Institutes o
 - **Automatic Coma Logic**: When Item 1a (LOC) is scored as a 3, the scale automatically applies official default scores to untestable items (1b, 1c, 8, 9, 10, 11).
 - **Instant Interpretation**: Real-time severity classification (Minor, Moderate, Severe).
 - **Responsive Design**: Built with Python and Streamlit for use on mobile, tablet, or desktop.
+
+---
+*© 2024 Dawid Krynicki - All Rights Reserved*
