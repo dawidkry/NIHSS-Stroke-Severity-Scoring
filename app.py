@@ -3,13 +3,13 @@ import streamlit as st
 # --- PAGE CONFIG ---
 st.set_page_config(page_title="NIH Stroke Scale", page_icon="🧠", layout="centered")
 
-# --- CSS STYLING ---
+# --- CSS STYLING (The "Replit" Look) ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
     html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
     
-    /* Question Card Styling */
+    /* Card Styling */
     div.row-widget.stRadio {
         background-color: white;
         padding: 20px;
@@ -18,7 +18,7 @@ st.markdown("""
         margin-bottom: 15px;
     }
 
-    /* Yellow Coma Warning */
+    /* Yellow Alert */
     .coma-alert {
         background-color: #fffbeb;
         color: #92400e;
@@ -28,7 +28,7 @@ st.markdown("""
         margin-bottom: 20px;
     }
 
-    /* Blue Instruction Box */
+    /* Blue Info */
     .info-box {
         background-color: #eff6ff;
         color: #1e40af;
@@ -39,13 +39,12 @@ st.markdown("""
         font-size: 0.9rem;
     }
     
-    /* Hide Streamlit elements */
     header {visibility: hidden;}
     footer {visibility: hidden;}
     </style>
     """, unsafe_allow_html=True)
 
-# --- DATA ---
+# --- NIHSS DATA ---
 COMA_RULES = {"1b": 2, "1c": 2, "2": 1, "3": 1, "4": 2, "5a": 4, "5b": 4, "6a": 4, "6b": 4, "7": 0, "8": 2, "9": 3, "10": 2, "11": 2}
 
 NIHSS_ITEMS = [
@@ -73,7 +72,7 @@ def get_interpretation(score):
     elif 16 <= score <= 20: return "Moderate to Severe", "inverse"
     else: return "Severe Stroke", "inverse"
 
-# --- INITIALIZE STATE ---
+# --- SESSION STATE ---
 if 'reset_key' not in st.session_state:
     st.session_state.reset_key = 0
 if 'scores' not in st.session_state:
@@ -83,20 +82,19 @@ def reset_all():
     st.session_state.reset_key += 1
     st.session_state.scores = {item['id']: 0 for item in NIHSS_ITEMS}
 
-# --- HEADER: SCORE & RESET ---
+# --- RENDER TOP SCORE ---
 st.title("NIH Stroke Scale")
 
-# Calculate totals before rendering questions to ensure the top score is always right
+# Score Calculation
 total_score = sum(st.session_state.scores.values())
 severity, color = get_interpretation(total_score)
 
-# Display the Score Dashboard
-st.metric(label="Patient Total Score", value=f"{total_score} / 42", delta=severity, delta_color=color)
+# Top Metric
+st.metric(label="NIHSS Total Score", value=f"{total_score} / 42", delta=severity, delta_color=color)
 st.button("🔄 Reset Calculator", on_click=reset_all, use_container_width=True)
 st.divider()
 
 # --- CALCULATOR BODY ---
-# 1a. Trigger
 st.markdown(f"### {NIHSS_ITEMS[0]['name']}")
 st.markdown(f'<div class="info-box">ℹ️ {NIHSS_ITEMS[0]["info"]}</div>', unsafe_allow_html=True)
 loc_choice = st.radio("LOC", NIHSS_ITEMS[0]["options"], label_visibility="collapsed", key=f"1a_{st.session_state.reset_key}")
@@ -105,9 +103,8 @@ st.session_state.scores["1a"] = loc_score
 is_coma = (loc_score == 3)
 
 if is_coma:
-    st.markdown('<div class="coma-alert"><strong>⚠️ Coma Detected (1a=3)</strong>: Automatic scoring applied.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="coma-alert"><strong>⚠️ Coma Detected (1a=3)</strong>: Default NIHSS coma scores applied.</div>', unsafe_allow_html=True)
 
-# Loop Remaining
 for item in NIHSS_ITEMS[1:]:
     st.markdown(f"**{item['name']}**")
     item_id = item["id"]
@@ -120,6 +117,11 @@ for item in NIHSS_ITEMS[1:]:
         choice = st.radio(item["name"], item["options"], label_visibility="collapsed", key=f"{item_id}_{st.session_state.reset_key}")
         st.session_state.scores[item_id] = 0 if "UN" in choice else int(choice[0])
 
-# Final Rerun to update score at top on next interaction
+# --- RENDER BOTTOM SCORE ---
+st.divider()
+st.markdown("### Final Assessment")
+st.metric(label="NIHSS Total Score", value=f"{total_score} / 42", delta=severity, delta_color=color)
+
+# Trigger rerun to keep top and bottom synced instantly
 if total_score != sum(st.session_state.scores.values()):
     st.rerun()
