@@ -3,15 +3,6 @@ import streamlit as st
 # --- PAGE CONFIG ---
 st.set_page_config(page_title="NIHSS Calculator", page_icon="🧠", layout="centered")
 
-# --- INITIALIZATION & RESET LOGIC ---
-# We use a 'reset_counter' to force-refresh all radio buttons
-if 'reset_counter' not in st.session_state:
-    st.session_state.reset_counter = 0
-
-def reset_calculator():
-    st.session_state.reset_counter += 1
-    # This wipes the radio selections by changing their unique keys
-
 # --- DATA & RULES ---
 COMA_RULES = {
     "1b": 2, "1c": 2, "2": 1, "3": 1, "4": 2, "5a": 4, "5b": 4, 
@@ -43,60 +34,65 @@ def get_interpretation(score):
     elif 16 <= score <= 20: return "Moderate to Severe", "inverse"
     else: return "Severe Stroke", "inverse"
 
-# --- TOP HEADER (Sticky Score & Reset) ---
-header = st.container()
-with header:
-    st.title("NIH Stroke Scale")
-    score_col, btn_col = st.columns([3, 1])
-    
-    # We will fill the score later using an empty placeholder so it's always at the top
-    score_placeholder = st.empty()
-    
-    with btn_col:
-        st.button("🔄 Reset", on_click=reset_calculator, use_container_width=True)
-    st.divider()
+# --- RESET LOGIC ---
+if 'reset_key' not in st.session_state:
+    st.session_state.reset_key = 0
 
-# --- CALCULATOR BODY ---
+def reset_all():
+    st.session_state.reset_key += 1 # Changing the key forces all widgets to re-render from 0
+
+# --- HEADER SECTION ---
+st.title("NIH Stroke Scale")
+
+# Placeholder for the Score (so it appears at the top but calculates after selections)
+score_box = st.empty()
+
+# Reset button at the top
+st.button("🔄 Reset Calculator", on_click=reset_all, use_container_width=True)
+st.divider()
+
+# --- INPUTS ---
 current_scores = {}
 
-# 1. First Item (LOC 1a)
+# 1. Trigger Item: LOC 1a
 loc_choice = st.radio(
     NIHSS_ITEMS[0]["name"], 
     NIHSS_ITEMS[0]["options"], 
     horizontal=True, 
-    key=f"loc_1a_{st.session_state.reset_counter}"
+    key=f"1a_{st.session_state.reset_key}"
 )
 loc_score = int(loc_choice[0])
 current_scores["1a"] = loc_score
 is_coma = (loc_score == 3)
 
+# --- CLINICAL PRESUMPTION (Now at the top) ---
 if is_coma:
-    st.error("🚨 **COMA PROTOCOL ACTIVE**")
-    st.caption("Patient is unresponsive (LOC 1a=3). Guidelines require presumed maximum deficit for untestable items.")
+    st.error("🚨 **CLINICAL PRESUMPTION: SEVERE STROKE**")
+    st.markdown("""
+    **Note:** Patient is in a coma (LOC 1a=3). In the absence of intracranial hemorrhage, a large territory ischemic stroke 
+    (e.g., Basilar Artery or Large Territory MCA) must be presumed. Official NIHSS guidelines automatically apply 
+    maximum deficit scores to untestable items.
+    """)
 
-# 2. Remaining Items
+# 2. Loop through remaining items
 for item in NIHSS_ITEMS[1:]:
     item_id = item["id"]
     
     if is_coma and item_id in COMA_RULES:
         auto_val = COMA_RULES[item_id]
         current_scores[item_id] = auto_val
-        # Display as disabled but showing the auto-filled value
-        st.radio(item["name"], item["options"], index=auto_val, disabled=True, horizontal=True, key=f"{item_id}_{st.session_state.reset_counter}")
+        st.radio(item["name"], item["options"], index=auto_val, disabled=True, horizontal=True, key=f"{item_id}_{st.session_state.reset_key}")
     else:
-        choice = st.radio(item["name"], item["options"], horizontal=True, key=f"{item_id}_{st.session_state.reset_counter}")
+        choice = st.radio(item["name"], item["options"], horizontal=True, key=f"{item_id}_{st.session_state.reset_key}")
         current_scores[item_id] = 0 if "UN" in choice else int(choice[0])
 
-# --- CALCULATE & UPDATE HEADER ---
+# --- FINAL CALCULATION ---
 total_score = sum(current_scores.values())
-severity, delta_color = get_interpretation(total_score)
+interpretation, delta_color = get_interpretation(total_score)
 
-# Update the placeholder at the top of the page
-with score_placeholder:
-    st.metric(label="Total Score", value=f"{total_score} / 42", delta=severity, delta_color=delta_color)
+# Fill the placeholder at the top
+with score_box:
+    st.metric(label="Patient NIHSS Score", value=f"{total_score} / 42", delta=interpretation, delta_color=delta_color)
 
-# --- CLINICAL FOOTER ---
-if is_coma:
-    st.info("**Clinical Presumption:** In a coma patient where hemorrhage has been ruled out, a severe ischemic stroke (e.g., Basilar Artery or Large Territory MCA) must be presumed.")
-
-
+st.divider()
+st.caption("Standardized assessment for acute stroke. For clinical use by trained healthcare providers.")
