@@ -8,5 +8,8 @@ A professional-grade, web-based tool for calculating the **National Institutes o
 - **Instant Interpretation**: Real-time severity classification (Minor, Moderate, Severe).
 - **Responsive Design**: Built with Python and Streamlit for use on mobile, tablet, or desktop.
 
+## ⚖️ Disclaimer
+This tool is intended for healthcare professionals for educational and supportive purposes. Clinical decisions should be made based on complete patient evaluation and institutional protocols.
+
 ---
 *© 2024 Dawid Krynicki - All Rights Reserved*
