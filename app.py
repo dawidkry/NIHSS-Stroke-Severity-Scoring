@@ -3,8 +3,16 @@ import streamlit as st
 # --- PAGE CONFIG ---
 st.set_page_config(page_title="NIHSS Calculator", page_icon="🧠", layout="centered")
 
+# Hide the Streamlit "hamburger" menu and footer for an even cleaner look
+st.markdown("""
+    <style>
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    </style>
+    """, unsafe_allow_html=True)
+
 # --- DATA & RULES ---
-# Extracted logic: Items automatically filled when 1a=3 (Coma)
 COMA_RULES = {
     "1b": 2, "1c": 2, "2": 1, "3": 1, "4": 2, "5a": 4, "5b": 4, 
     "6a": 4, "6b": 4, "7": 0, "8": 2, "9": 3, "10": 2, "11": 2
@@ -42,19 +50,20 @@ if 'reset_key' not in st.session_state:
 def reset_all():
     st.session_state.reset_key += 1
 
-# --- APP UI ---
+# --- UI LAYOUT ---
 st.title("NIH Stroke Scale")
 
-# Placeholder for the dynamic score metric
-score_box = st.empty()
+# 1. Total Score Metric (Stays at top)
+score_placeholder = st.empty()
 
-# Action button (Reset only, no share/info buttons)
+# 2. Reset Button (Full width)
 st.button("🔄 Reset Calculator", on_click=reset_all, use_container_width=True)
 st.divider()
 
+# --- INPUT PROCESSING ---
 current_scores = {}
 
-# 1. Trigger: LOC 1a
+# LOC 1a (The trigger)
 loc_choice = st.radio(
     NIHSS_ITEMS[0]["name"], 
     NIHSS_ITEMS[0]["options"], 
@@ -65,15 +74,12 @@ loc_score = int(loc_choice[0])
 current_scores["1a"] = loc_score
 is_coma = (loc_score == 3)
 
-# 2. Clinical Presumption (Top Position)
+# Clinical Presumption Box (Top Position)
 if is_coma:
     st.error("🚨 **CLINICAL PRESUMPTION: SEVERE STROKE**")
-    st.info("""
-    **Patient in Coma (LOC 1a=3).** Rule out hemorrhage. Large territory ischemic stroke must be presumed. 
-    Maximum deficit scores automatically applied to untestable items per guidelines.
-    """)
+    st.info("**Patient in Coma (LOC 1a=3).** Large territory ischemic stroke presumed. Maximum deficit scores auto-applied.")
 
-# 3. Assessment Questions
+# All other items
 for item in NIHSS_ITEMS[1:]:
     item_id = item["id"]
     
@@ -85,9 +91,9 @@ for item in NIHSS_ITEMS[1:]:
         choice = st.radio(item["name"], item["options"], horizontal=True, key=f"{item_id}_{st.session_state.reset_key}")
         current_scores[item_id] = 0 if "UN" in choice else int(choice[0])
 
-# --- CALCULATION & TOP METRIC UPDATE ---
+# Update the Score Metric at the top
 total_score = sum(current_scores.values())
 interpretation, delta_color = get_interpretation(total_score)
 
-with score_box:
-    st.metric(label="NIHSS Total Score", value=f"{total_score} / 42", delta=interpretation, delta_color=delta_color)
+with score_placeholder:
+    st.metric(label="Total NIHSS Score", value=f"{total_score} / 42", delta=interpretation, delta_color=delta_color)
