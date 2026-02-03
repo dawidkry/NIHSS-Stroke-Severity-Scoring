@@ -12,4 +12,4 @@ A professional-grade, web-based tool for calculating the **National Institutes o
 This tool is intended for healthcare professionals for educational and supportive purposes. Clinical decisions should be made based on complete patient evaluation and institutional protocols.
 
 ---
-*© 2024 Dawid Krynicki - All Rights Reserved*
+*Copyright (c) 2026 dawidkry - All Rights Reserved*
