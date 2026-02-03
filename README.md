@@ -1,3 +1,5 @@
+![IMG_0569](https://github.com/user-attachments/assets/62ba4b5c-9946-401a-8d5f-6ac2087c04d1)
+
 # NIHSS Score Calculator 🧠
 
 A professional-grade, web-based tool for calculating the **National Institutes of Health Stroke Scale (NIHSS)**. This app is designed for healthcare providers to perform rapid, accurate stroke assessments.
