@@ -13,5 +13,7 @@ A professional-grade, web-based tool for calculating the **National Institutes o
 ## ⚖️ Disclaimer
 This tool is intended for healthcare professionals for educational and supportive purposes. Clinical decisions should be made based on complete patient evaluation and institutional protocols.
 
+## Acknowledgements
+Clinical review provided by Dr. Steven Neilaj, Medical Registrar.
 ---
 *Copyright (c) 2026 dawidkry - All Rights Reserved*
