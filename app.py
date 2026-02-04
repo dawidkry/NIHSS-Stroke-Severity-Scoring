@@ -45,14 +45,28 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # --- NIHSS DATA ---
-COMA_RULES = {"1b": 2, "1c": 2, "2": 1, "3": 1, "4": 2, "5a": 4, "5b": 4, "6a": 4, "6b": 4, "7": 0, "8": 2, "9": 3, "10": 2, "11": 2}
+# NIHSS-compliant coma defaults (EXCLUDING items 2 & 3)
+COMA_RULES = {
+    "1b": 2,
+    "1c": 2,
+    "4": 3,
+    "5a": 4,
+    "5b": 4,
+    "6a": 4,
+    "6b": 4,
+    "7": 0,
+    "8": 2,
+    "9": 3,
+    "10": 2,
+    "11": 2
+}
 
 NIHSS_ITEMS = [
     {"id": "1a", "name": "1a. Level of Consciousness", "info": "A 3 is scored only if the patient makes no movement (other than reflexive) in response to noxious stimulation.", "options": ["0 - Alert", "1 - Not Alert (arousable)", "2 - Not Alert (requires stimulation)", "3 - Unresponsive (Coma)"]},
     {"id": "1b", "name": "1b. LOC Questions", "options": ["0 - Answers both correctly", "1 - Answers one correctly", "2 - Answers neither correctly"]},
     {"id": "1c", "name": "1c. LOC Commands", "options": ["0 - Performs both correctly", "1 - Performs one correctly", "2 - Performs neither correctly"]},
-    {"id": "2", "name": "2. Best Gaze", "options": ["0 - Normal", "1 - Partial gaze palsy", "2 - Forced deviation"]},
-    {"id": "3", "name": "3. Visual Fields", "options": ["0 - No visual loss", "1 - Partial hemianopia", "2 - Complete hemianopia", "3 - Bilateral hemianopia"]},
+    {"id": "2", "name": "2. Best Gaze (Oculocephalic)", "options": ["0 - Normal", "1 - Partial gaze palsy", "2 - Forced deviation"]},
+    {"id": "3", "name": "3. Visual Fields (Bilateral Threat)", "options": ["0 - No visual loss", "1 - Partial hemianopia", "2 - Complete hemianopia", "3 - Bilateral hemianopia"]},
     {"id": "4", "name": "4. Facial Palsy", "options": ["0 - Normal movement", "1 - Minor paralysis", "2 - Partial paralysis", "3 - Complete paralysis"]},
     {"id": "5a", "name": "5a. Left Arm Motor", "options": ["0 - No drift", "1 - Drift", "2 - Some effort vs gravity", "3 - No effort vs gravity", "4 - No movement", "UN - Untestable"]},
     {"id": "5b", "name": "5b. Right Arm Motor", "options": ["0 - No drift", "1 - Drift", "2 - Some effort vs gravity", "3 - No effort vs gravity", "4 - No movement", "UN - Untestable"]},
@@ -82,19 +96,18 @@ def reset_all():
     st.session_state.reset_key += 1
     st.session_state.scores = {item['id']: 0 for item in NIHSS_ITEMS}
 
-# --- RENDER TOP SCORE ---
+# --- HEADER ---
 st.title("NIH Stroke Scale")
 
-# Score Calculation
+# --- SCORE CALCULATION ---
 total_score = sum(st.session_state.scores.values())
 severity, color = get_interpretation(total_score)
 
-# Top Metric
 st.metric(label="NIHSS Total Score", value=f"{total_score} / 42", delta=severity, delta_color=color)
 st.button("🔄 Reset Calculator", on_click=reset_all, use_container_width=True)
 st.divider()
 
-# --- CALCULATOR BODY ---
+# --- ITEM 1a ---
 st.markdown(f"### {NIHSS_ITEMS[0]['name']}")
 st.markdown(f'<div class="info-box">ℹ️ {NIHSS_ITEMS[0]["info"]}</div>', unsafe_allow_html=True)
 loc_choice = st.radio("LOC", NIHSS_ITEMS[0]["options"], label_visibility="collapsed", key=f"1a_{st.session_state.reset_key}")
@@ -103,25 +116,42 @@ st.session_state.scores["1a"] = loc_score
 is_coma = (loc_score == 3)
 
 if is_coma:
-    st.markdown('<div class="coma-alert"><strong>⚠️ Coma Detected (1a=3)</strong>: Default NIHSS coma scores applied.</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="coma-alert"><strong>⚠️ Coma Detected (1a = 3)</strong><br>'
+        'NIHSS coma defaults applied. Best gaze and visual fields still require examination.</div>',
+        unsafe_allow_html=True
+    )
 
+# --- REMAINING ITEMS ---
 for item in NIHSS_ITEMS[1:]:
-    st.markdown(f"**{item['name']}**")
     item_id = item["id"]
-    
+    st.markdown(f"**{item['name']}**")
+
     if is_coma and item_id in COMA_RULES:
         auto_val = COMA_RULES[item_id]
         st.session_state.scores[item_id] = auto_val
-        st.radio(item["name"], item["options"], index=auto_val, disabled=True, label_visibility="collapsed", key=f"{item_id}_{st.session_state.reset_key}")
+        st.radio(
+            item["name"],
+            item["options"],
+            index=auto_val,
+            disabled=True,
+            label_visibility="collapsed",
+            key=f"{item_id}_{st.session_state.reset_key}"
+        )
     else:
-        choice = st.radio(item["name"], item["options"], label_visibility="collapsed", key=f"{item_id}_{st.session_state.reset_key}")
+        choice = st.radio(
+            item["name"],
+            item["options"],
+            label_visibility="collapsed",
+            key=f"{item_id}_{st.session_state.reset_key}"
+        )
         st.session_state.scores[item_id] = 0 if "UN" in choice else int(choice[0])
 
-# --- RENDER BOTTOM SCORE ---
+# --- FINAL SCORE ---
 st.divider()
 st.markdown("### Final Assessment")
 st.metric(label="NIHSS Total Score", value=f"{total_score} / 42", delta=severity, delta_color=color)
 
-# Trigger rerun to keep top and bottom synced instantly
+# Keep top & bottom in sync
 if total_score != sum(st.session_state.scores.values()):
     st.rerun()
