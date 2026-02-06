@@ -155,3 +155,66 @@ st.metric(label="NIHSS Total Score", value=f"{total_score} / 42", delta=severity
 # Keep top & bottom in sync
 if total_score != sum(st.session_state.scores.values()):
     st.rerun()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import datetime
+
+# --- 9. SUMMARY & DOWNLOAD ---
+st.divider()
+st.header("Step 3: Clinical Summary")
+
+# Professional identifier input
+patient_id = st.text_input("Patient Identifier (e.g., NHS/Hospital Number or Initials)")
+
+if st.button("Generate Clinical Note"):
+    # Create a detailed breakdown of the scoring for the notes
+    breakdown = "\n".join([f"- {item['name']}: {st.session_state.scores[item['id']]}" for item in NIHSS_ITEMS])
+    
+    summary_text = f"""NIH STROKE SCALE (NIHSS) ASSESSMENT
+Date/Time: {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}
+Patient ID: {patient_id}
+-------------------------------------------
+TOTAL NIHSS SCORE: {total_score} / 42
+INTERPRETATION: {severity}
+
+DETAILED BREAKDOWN:
+{breakdown}
+
+{"⚠️ NOTE: Coma defaults applied (1a=3)" if is_coma else ""}
+-------------------------------------------
+PLAN:
+- Clinical correlation required. 
+- Assessment performed as part of acute stroke evaluation.
+
+Assessed by: [Name/Grade]
+"""
+    
+    # Display for copying
+    st.text_area("Copy to Clinical Notes:", summary_text, height=350)
+    
+    # Download option
+    st.download_button(
+        label="Download Summary (.txt)",
+        data=summary_text,
+        file_name=f"NIHSS_{patient_id}_{datetime.date.today()}.txt",
+        mime="text/plain"
+    )
+
+st.caption("Disclaimer: This tool is a clinical decision aid. Diagnosis and management should be based on full clinical assessment and local protocols.")
