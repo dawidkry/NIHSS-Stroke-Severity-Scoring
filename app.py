@@ -181,7 +181,7 @@ st.divider()
 st.header("Step 3: Clinical Summary")
 
 # Professional identifier input
-patient_id = st.text_input("Patient Identifier (e.g., NHS/Hospital Number or Initials)")
+patient_id = st.text_input("Patient Initials)")
 
 if st.button("Generate Clinical Note"):
     # Create a detailed breakdown of the scoring for the notes
